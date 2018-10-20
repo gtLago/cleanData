@@ -29,29 +29,43 @@ def cleanUp(file):
     line = line.decode()
     if line.find("# x s")!=-1:
       line_split = line.split(" ")
-      temperature = line_split[3] + line_split[4]
-      pressure = line_split[5] + line_split[6]
-      altitude = line_split[7] + line_split[8].replace('\n', '')
+      if(line_split[4]=="#"):
+        temperature = "Null"
+        pressure = "Null"
+        altitude = "Null"
+      else:
+        temperature = line_split[3] + " " + line_split[4]
+        pressure = line_split[5] + line_split[6]
+        altitude = line_split[7] + line_split[8].replace('\n', '')
     if line.find("# # This file was started on ")!=-1:
       line_split = line.split(" ")
       computer = line_split[7].replace('\n', '')
     if line.find("# x h")!=-1:
       line_split = line.split(" ")
-      dateTime = line_split[5] + line_split[6]
+      dateTime = line_split[5] + " " + line_split[6]
     if line.find("#")==-1:
       line_split = line.split(" ")
       csv_lines.append([line_split[0],dateTime,temperature,pressure,altitude,computer,place,1])
-  with open('./DATA/gtLago.csv', 'w') as outfile:
+  with open('/grid/O/hdfsData/gtLago.csv', 'a') as outfile:
     writer = csv.writer(outfile)
     csv.excel.delimiter='|'
     writer = csv.writer(outfile, dialect=csv.excel)
-    for line in csv_lines:
-      writer.writerow(line)
+    for i in range(1000000):
+      writer.writerow(csv_lines[i])
+  print("File "+ file +" coverted to CSV")
+  os.system("rm -rf ./"+ file +"")
+  print("File "+ file +" deleted")
+  os.system("hdfs dfs -rm -r -f /user/root/lago/data/gtLago.csv")
+  print("delete HDFS")
+  os.system("hdfs dfs -put /grid/O/hdfsData/gtLago.csv /user/root/lago/data/gtLago.csv")
+  print("File "+ file +" uploaded to HDFS")
+  os.system("rm -rf /grid/O/hdfsData/gtLago.csv")
+  print("File "+ file +" deleted")
   outfile.close()
   bz_file.close()
 
 
-path_to_watch = "D://UVG/MP/Services/LimpiezaDatos/"
+path_to_watch = "./"
 before = dict ([(f, None) for f in os.listdir (path_to_watch)])
 while 1:
   time.sleep (1)
@@ -59,7 +73,7 @@ while 1:
   added = [f for f in after if not f in before]
   removed = [f for f in before if not f in after]
   if added: 
-    cleanUp(added[0])
     print ("Added: ", ", ".join (added))
+    cleanUp(added[0])
   if removed: print("Removed: ", ", ".join (removed))
   before = after
